@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter
 from app.schemas import EmployeeProfile, EmployeeResult, ParsedEmployeeProfile, QueryRequest
-from app.services.llm_service import parse_employee_profile, parse_query
+from app.services.llm_service import parse_employee, parse_query
 from app.services.qdrant_service import upsert_employee, search_employees
 
 router = APIRouter()
@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/employees/upload", response_model=dict[str, Any])
 async def upload_employee(profile: EmployeeProfile):
     """Ingest an employee profile: extract metadata via LLM, embed, and store."""
-    parsed = await parse_employee_profile(profile)
+    parsed = await parse_employee(profile)
     point_id = upsert_employee(parsed)
 
     return {

@@ -6,14 +6,14 @@ from qdrant_client.models import PointStruct
 
 from app.core.config import settings
 from app.schemas import ParsedEmployeeProfile
-from app.services.llm_service.clients import embeddings
+from app.services.llm_service.clients import get_embeddings
 from app.services.qdrant_service.client import qdrant
 
 
 def upsert_employee(parsed: ParsedEmployeeProfile) -> str:
     """Embed and store a parsed employee profile in Qdrant."""
     text_for_embedding = f"{parsed.name} {parsed.title} {parsed.bio}"
-    vector = embeddings.embed_query(text_for_embedding)
+    vector = get_embeddings().embed_query(text_for_embedding)
 
     point_id = str(uuid.uuid4())
     qdrant.upsert(

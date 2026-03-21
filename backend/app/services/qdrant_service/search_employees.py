@@ -13,7 +13,7 @@ from qdrant_client.models import (
 
 from app.core.config import settings
 from app.schemas import EmployeeResult, ParsedQuery
-from app.services.llm_service.clients import embeddings
+from app.services.llm_service.clients import get_embeddings
 from app.services.qdrant_service.client import qdrant
 
 
@@ -60,7 +60,7 @@ def search_employees(
         )
 
     search_filter = Filter(must=conditions) if conditions else None
-    query_vector = embeddings.embed_query(parsed.semantic_query or raw_query)
+    query_vector = get_embeddings().embed_query(parsed.semantic_query or raw_query)
 
     hits = qdrant.search(
         collection_name=settings.collection_name,

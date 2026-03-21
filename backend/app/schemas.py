@@ -9,7 +9,7 @@ class Skill(BaseModel):
     description: str = Field("", description="Brief description of proficiency or context")
 
 
-class EmployeeProfile(BaseModel):
+class ParseEmployeeProfilePayload(BaseModel):
     name: str = Field(..., description="Full name of the employee")
     title: str = Field(..., description="Current job title or role")
     bio: str = Field(..., description="Free-text employee profile / resume")
@@ -18,18 +18,21 @@ class EmployeeProfile(BaseModel):
     grade: str | None = Field(None, description="Seniority grade (e.g. junior, mid, senior, lead)")
 
 
-class ParsedEmployeeProfile(EmployeeProfile):
-    """Parsed employee profile with structured metadata extracted from free text."""
+class ParseEmployeeProfileAIMetadata(BaseModel):
+    """Structured fields expected from LLM extraction of an employee bio."""
     skills: list[Skill] = Field(default_factory=list, description="List of extracted skills with experience details")
     years_experience: float | None = Field(None, description="Total years of professional experience")
 
+
+class ParseEmployeeProfileAI(ParseEmployeeProfilePayload, ParseEmployeeProfileAIMetadata):
+    """Parsed employee profile with structured metadata extracted from free text."""
 
 class QueryRequest(BaseModel):
     query: str = Field(..., description="Natural-language talent search query")
     top_k: int = Field(default=5, ge=1, le=50, description="Maximum number of results to return")
 
 
-class EmployeeResult(ParsedEmployeeProfile):
+class EmployeeResult(ParseEmployeeProfileAI):
     id: str = Field(..., description="Unique identifier of the employee record")
     score: float = Field(..., description="Relevance score from vector search")
 
