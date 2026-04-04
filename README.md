@@ -1,110 +1,58 @@
-# TalentStream AI
+# VidPlan AI
 
-TalentStream AI is a RAG-based talent acquisition system that uses LLM-powered metadata extraction and filtered vector search to match candidates to hiring queries.
+**VidPlan AI**
+(Previously Talent Stream AI)
+is an intelligent content-creator assistant designed to streamline the production of video scripts, social media captions, and overall project management. By leveraging a structured AI agent, VidPlan AI helps creators brainstorm ideas and seamlessly execute them into organized, structured formats.
 
-## How It Works
+## 🚀 Project Overview
 
-1. **Upload** an employee profile (free text bio + optional department/location/grade)
-2. An LLM extracts structured metadata: skills (with per-skill experience), total years of experience
-3. The profile is embedded and stored in Qdrant alongside its metadata
-4. **Search** with natural language (e.g. *"Devs with >5 years experience in Python"*)
-5. The query is parsed into metadata filters + a semantic embedding, then Qdrant runs a **metadata-filtered vector search**
+VidPlan AI assists content creators in generating video-related content using a sophisticated AI agent. The AI is designed with two distinct modes:
+- **Brainstorming Mode (Chat-only):** Discuss ideas, explore concepts, and refine strategies without altering project files.
+- **Execution Mode:** The AI autonomously writes and updates scripts, captions, and reference notes directly into the database.
 
-## Quick Start
+## 🖥️ User Interface
 
-```bash
-cp .env.example .env
-# Edit .env and set OPENAI_API_KEY
-docker compose up --build
-```
+The application features a highly productive, multi-tab layout:
 
-- **Backend API:** http://localhost:8000/docs
-- **Frontend UI:** http://localhost:8501
-- **Qdrant Dashboard:** http://localhost:6333/dashboard
+- **Left Sidebar:** Displays a list of all your projects with a convenient "Create New Project" button.
+- **Right Main Panel:** A workspace dedicated to the selected project, divided into multiple functional tabs:
+  - **Chat Tab:** Your primary interface for interacting with the AI agent.
+  - **Script Tab:** Holds generated and refined video scripts.
+  - **References Tab:** Stores research notes, links, and background context.
+  - **Social Media Tab:** Contains auto-generated captions, descriptions, and hashtags.
 
-## Tech Stack
+**Workflow:** When you create a new project, the backend instantly provisions a project ID and initializes a corresponding entry in the vector database for semantic search. As you interact with the agent in the Chat tab, it intelligently populates the other tabs with relevant content.
 
-- **FastAPI** — async backend
-- **Streamlit** — frontend UI
-- **Qdrant** — vector database with nested metadata filtering
-- **LangChain + OpenAI** — gpt-4o-mini for extraction, text-embedding-ada-002 for embeddings
-- **Docker Compose** — containerized deployment
+## 🏗️ Backend Architecture
 
-## Environment Variables
+The backend is built for performance and modularity using **FastAPI**. It relies on two primary routers:
+- `agent`: Manages all AI interactions, intent parsing, and tool execution.
+- `database`: Handles standard CRUD operations and serves data to the frontend tabs.
 
-| Variable | Default | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | — | Required. OpenAI API key |
-| `QDRANT_HOST` | `qdrant` | Qdrant server hostname |
-| `QDRANT_PORT` | `6333` | Qdrant server port |
-| `API_URL` | `http://backend:8000` | Backend URL (frontend only) |
+### Hybrid Storage System
+- **PostgreSQL:** Provides structured storage for projects, documents (scripts, captions), and chat messages.
+- **Vector Database (PGVector):** Stores project embeddings to enable semantic search and Retrieval-Augmented Generation (RAG) workflows.
 
-## API Endpoints
+### AI Agent (Pydantic AI)
+The core intelligence is powered by **Pydantic AI**, which enforces structured intent outputs. It utilizes function calling to safely save documents, update project statuses, and generate content without direct database access.
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/employees/upload` | Upload an employee profile for LLM extraction and indexing |
-| `POST` | `/query` | Natural-language talent search with metadata-filtered vector retrieval |
-| `GET` | `/health` | Health check |
+## ✨ Key Features
 
-## Local Development
+- **Structured AI Agent:** Clear separation between idea generation (brainstorming) and content generation (execution).
+- **Hybrid Data Storage:** Combines the reliability of Postgres for structured data with the intelligence of a Vector DB for semantic retrieval.
+- **Multi-Tab GUI:** An organized, intuitive interface for seamless project management and content creation.
+- **Full Traceability:** Complete history of chat interactions and generated content versions.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt -r frontend/requirements.txt
+## 🛠️ Tech Stack
 
-# Start Qdrant
-docker compose up qdrant -d
+- **Backend:** FastAPI, SQLAlchemy (Postgres), PGVector (or external Vector DB like Qdrant)
+- **Frontend:** Next.js, Tailwind CSS
+- **AI/LLM:** OpenAI API, Pydantic AI
+- **UI Components (Optional):** shadcn/ui for polished tabs, sidebars, and layouts
 
-# Run backend
-cd backend
-QDRANT_HOST=localhost OPENAI_API_KEY=sk-... uvicorn main:app --reload --port 8000
+## 📚 Documentation
 
-# Run frontend (separate terminal)
-cd frontend
-API_URL=http://localhost:8000 streamlit run app.py
-```
+For a deeper dive into the technical design, database schemas, and folder structures, please refer to the detailed documentation located in the `/docs` directory:
 
-## Running Tests
-
-All tests live in `backend/tests/` and must be run from the `backend/` directory so the `app` package is importable.
-
-Because backend settings now validate `OPENAI_API_KEY` at import time, provide that variable when running tests.
-
-Recommended test command (uses a dummy key; external providers are mocked in tests):
-
-```bash
-cd backend
-OPENAI_API_KEY=test-key python -m pytest tests/ -v
-```
-
-If you prefer to use the root `.env` values:
-
-```bash
-cd backend
-set -a
-source ../.env
-set +a
-python -m pytest tests/ -v
-```
-
-Run a single test file:
-
-```bash
-cd backend
-python -m pytest tests/test_parse_employee_profile.py -v
-```
-
-> **Note:** Do not run test files directly with `python3 tests/test_file.py` — this skips the path setup that `pytest` provides and will fail with `ModuleNotFoundError: No module named 'app'`.
-
-### Test Structure
-
-| File | What it covers |
-|---|---|
-| `tests/test_integration.py` | Full upload → search round-trip through the API (mocked LLM + Qdrant) |
-| `tests/test_parse_employee_profile.py` | LLM profile extraction logic |
-| `tests/test_parse_query.py` | LLM query parsing logic |
-| `tests/test_search_employees.py` | Qdrant search with metadata filtering |
-
-Tests mock external dependencies (OpenAI, Qdrant), so no real API keys or running services are needed. A dummy `OPENAI_API_KEY` is still required for settings initialization.
+- [Backend Architecture](docs/backend_architecture.md)
+- [Frontend Architecture](docs/frontend_architecture.md)
