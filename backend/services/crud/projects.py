@@ -1,20 +1,24 @@
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models.project import Project
-from backend.schemas import ProjectCreate, ProjectUpdate
+from backend.schemas.project import ProjectUpdate
 
-async def get_projects(db: AsyncSession) -> List[Project]:
-    result = await db.execute(select(Project).order_by(Project.created_at.desc()))
-    return list(result.scalars().all())
+async def get_projects(db: AsyncSession) -> Sequence[Row]:
+    result = await db.execute(
+        select(Project.id, Project.title, Project.updated_at)
+        .order_by(Project.updated_at.desc())
+    )
+    return result.all()
 
 async def get_project(db: AsyncSession, project_id: UUID) -> Optional[Project]:
     result = await db.execute(select(Project).where(Project.id == project_id))
     return result.scalar_one_or_none()
 
-async def create_project(db: AsyncSession, project_in: ProjectCreate) -> Project:
-    project = Project(**project_in.model_dump())
+async def create_project(db: AsyncSession) -> Project:
+    # Initialize an empty project
+    project = Project(title="", description="")
     db.add(project)
     await db.commit()
     await db.refresh(project)

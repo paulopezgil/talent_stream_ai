@@ -6,9 +6,8 @@
 backend/
 ├── core/           # Application config, security, and DB connection singletons
 ├── routers/        # API routing and endpoint definitions
-│   ├── agent.py        # Endpoints for interacting with the Pydantic AI agent
 │   ├── projects.py     # Endpoints for Project tab
-│   ├── messages.py     # Endpoints for Chat tab history
+│   ├── messages.py     # Endpoints for Chat history and Agent execution
 │   ├── scripts.py      # Endpoints for Script tab
 │   └── social_media.py # Endpoints for Social Network tab
 ├── services/       # Core business logic
@@ -102,22 +101,25 @@ The Agent logic is strictly separated into two layers:
   - `update_social_media_tab(ctx, ...)`
 - **Safety:** The AI never writes raw SQL. It outputs validated JSON matching the tool schemas, and the backend executes the explicit updates.
 
-### 2. The HTTP API Router (`routers/agent.py`)
-This layer handles the web requests, orchestrates the short-term sliding window memory, and invokes the Core Agent Service.
+### 2. The HTTP API Router (`routers/messages.py`)
+This layer strictly adheres to RESTful resource management. The frontend manages `messages` as simple resources, and the backend orchestrates the AI as an invisible side-effect of creating or editing these messages. There is no isolated "Agent API".
 
-- **Endpoint 1: `POST /api/projects/{project_id}/agent/chat` (New Message)**
-  1. Saves the user's input to the `messages` table.
-  2. Fetches a sliding window (e.g., last 10 messages) from the `messages` table to act as short-term memory.
-  3. Executes the Pydantic AI agent, passing the memory and dependencies.
-  4. Saves the AI's final text response to the `messages` table.
-  5. Returns the text response to the frontend.
+- **`GET /api/projects/{project_id}/messages`**
+  Returns the *entire* conversation history (ordered chronologically) for the frontend Chat Tab.
 
-- **Endpoint 2: `PUT /api/projects/{project_id}/agent/chat/regenerate` (Regenerate Last Message)**
-  1. Updates the `content` of the *last* user message with the newly provided text.
-  2. Deletes the *last* assistant message from the DB to clean up the timeline.
-  3. Fetches the sliding window of messages *prior* to the updated user message.
-  4. Executes the Agent exactly as above.
-  5. Saves the new AI response to the DB and returns it to the frontend.
+- **`POST /api/projects/{project_id}/messages` (New Message)**
+  1. Saves the user's input as a new `user` message to the database.
+  2. Invokes the `generate_agent_response()` orchestrator in the service layer.
+  3. Saves the AI's final text response as an `assistant` message.
+  4. Returns the AI's message to the frontend.
+
+- **`PUT /api/projects/{project_id}/messages/last` (Edit Last Message & Regenerate)**
+  Provides a simple way for users to correct typos or change direction without managing complex history tree states.
+  1. Locates the last pair of messages.
+  2. Edits the last `user` message with the new text.
+  3. Deletes the subsequent `assistant` message (if one exists).
+  4. Invokes the `generate_agent_response()` orchestrator.
+  5. Saves the new AI response to the DB and returns it.
 
 ## Architecture Patterns
 
@@ -129,7 +131,7 @@ To prevent business logic and database queries from being locked inside HTTP rou
 ## Backend Responsibilities
 
 1. Expose explicit REST endpoints via domain-specific routers (`projects.py`, `messages.py`, `scripts.py`, `social_media.py`) which delegate to `services/crud/`.
-2. Receive user messages from the frontend via the `agent.py` router (`POST` for new messages, `PUT` for editing messages).
+2. Receive user messages from the frontend via the `messages.py` router (`POST` for new messages, `PUT /last` for editing the final message).
 3. Hydrate context: Fetch the sliding window of `messages` and current state from `projects`, `scripts`, and `social_media` tables using the CRUD service.
 4. Call OpenAI API via Pydantic AI (handled in `services/agent.py`).
 5. Return response to frontend (validated via schemas in `schemas/`).

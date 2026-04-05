@@ -25,9 +25,7 @@ The application features a highly productive, multi-tab layout:
 
 ## 🏗️ Backend Architecture
 
-The backend is built for performance and modularity using **FastAPI**. It relies on two primary routers:
-- `agent`: Manages all AI interactions, intent parsing, and tool execution.
-- `database`: Handles standard CRUD operations and serves data to the frontend tabs.
+The backend is built for performance and modularity using **FastAPI**. It implements a strict RESTful architecture with domain-specific routers (`projects`, `messages`, `scripts`, `social_media`) that map 1:1 to the frontend tabs, while the AI orchestrator runs invisibly as a side-effect of message creation.
 
 ### Hybrid Storage System
 - **PostgreSQL:** Provides structured storage for projects, documents (scripts, captions), and chat messages.
@@ -46,9 +44,8 @@ The core intelligence is powered by **Pydantic AI**, which enforces structured i
 ## 🛠️ Tech Stack
 
 - **Backend:** FastAPI, SQLAlchemy (Postgres), PGVector (or external Vector DB like Qdrant)
-- **Frontend:** Next.js, Tailwind CSS
+- **Frontend:** Streamlit
 - **AI/LLM:** OpenAI API, Pydantic AI
-- **UI Components (Optional):** shadcn/ui for polished tabs, sidebars, and layouts
 
 ## 📚 Documentation
 

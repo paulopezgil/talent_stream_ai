@@ -3,23 +3,13 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime
 
-
-class ScriptBase(BaseModel):
-    content: str
-
-
-class ScriptCreate(ScriptBase):
-    project_id: UUID
-
-
 class ScriptUpdate(BaseModel):
     content: Optional[str] = None
 
-
-class ScriptResponse(ScriptBase):
+class ScriptResponse(BaseModel):
     id: UUID
     project_id: UUID
+    content: str
     created_at: datetime
     updated_at: datetime
-
     model_config = ConfigDict(from_attributes=True)
