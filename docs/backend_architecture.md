@@ -135,3 +135,85 @@ To prevent business logic and database queries from being locked inside HTTP rou
 3. Hydrate context: Fetch the sliding window of `messages` and current state from `projects`, `scripts`, and `social_media` tables using the CRUD service.
 4. Call OpenAI API via Pydantic AI (handled in `services/agent.py`).
 5. Return response to frontend (validated via schemas in `schemas/`).
+
+## Design Decisions & Trade-offs
+
+### 1. Database as Memory Pattern
+**Decision**: Store all project state in PostgreSQL rather than in-memory session storage.
+**Rationale**: 
+- Enables persistence across server restarts and user sessions
+- Allows for historical analysis and versioning
+- Simplifies deployment (no Redis or external cache required)
+**Trade-off**: Slightly higher database load, but PostgreSQL handles this well for moderate traffic.
+
+### 2. Tab-to-Table Explicit Mapping
+**Decision**: Each UI tab corresponds directly to a database table with explicit CRUD endpoints.
+**Rationale**:
+- Clear mental model for developers (what you see is what's stored)
+- Enables both manual editing and AI generation through the same interface
+- Simplifies permissioning and audit trails
+**Trade-off**: Less flexible than document storage but provides stronger data consistency.
+
+### 3. Repository Pattern Implementation
+**Decision**: Separate data access layer (`services/crud/`) from HTTP layer (`routers/`).
+**Rationale**:
+- Enables reuse by both REST API and AI agent tools
+- Centralizes database logic for easier testing and maintenance
+- Follows Single Responsibility Principle
+**Trade-off**: Slight increase in code complexity but significant improvement in testability.
+
+### 4. Pydantic AI for Structured Outputs
+**Decision**: Use Pydantic AI instead of raw OpenAI function calling.
+**Rationale**:
+- Type-safe tool definitions with automatic validation
+- Built-in retry logic and error handling
+- Clean separation between tool definitions and implementation
+**Trade-off**: Additional dependency but provides production-ready reliability.
+
+## Scalability Considerations
+
+### Current Architecture (Suitable for 1-100 concurrent users)
+- **Database**: Single PostgreSQL instance with PGVector
+- **Backend**: Single FastAPI instance (stateless, can be scaled horizontally)
+- **AI Calls**: Direct to OpenAI/other providers (rate-limited by provider)
+
+### Scaling Path
+1. **Horizontal Scaling**: Add more FastAPI instances behind a load balancer
+2. **Database**: Implement read replicas for `GET` endpoints
+3. **Vector Search**: Consider dedicated vector DB (Qdrant, Pinecone) for larger datasets
+4. **Caching**: Add Redis for frequently accessed project data
+5. **Async Processing**: Move AI generation to background tasks for longer operations
+
+## Testing Strategy
+
+### Unit Tests
+- **CRUD Operations**: Test each repository function in isolation
+- **Pydantic Schemas**: Validate data models and transformations
+- **Agent Tools**: Test tool functions with mocked database sessions
+
+### Integration Tests
+- **API Endpoints**: Test full HTTP request/response cycle
+- **Database Operations**: Test with test database using transaction rollbacks
+- **AI Integration**: Test with mocked LLM responses
+
+### Test Fixtures
+- Use `pytest-asyncio` for async test support
+- Database fixtures create test data and clean up after each test
+- Factory patterns for generating test entities
+
+## Security Considerations
+
+### 1. API Security
+- **Input Validation**: All endpoints use Pydantic schemas for strict validation
+- **CORS**: Configured for frontend domain only
+- **Rate Limiting**: Implemented at the load balancer level
+
+### 2. Data Security
+- **Project Isolation**: Users can only access their own projects (future enhancement)
+- **SQL Injection Prevention**: SQLAlchemy ORM with parameterized queries
+- **API Keys**: Environment variables with secrets management
+
+### 3. AI Safety
+- **Tool Validation**: Pydantic ensures structured outputs before execution
+- **Content Filtering**: Provider-level content moderation
+- **Audit Trail**: All AI-generated content stored with timestamps and context

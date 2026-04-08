@@ -1,85 +1,128 @@
-# VidPlan AI
+# VidPlan AI: Intelligent Content Creation Assistant
 
-**VidPlan AI**
-(Previously Talent Stream AI)
-is an intelligent content-creator assistant designed to streamline the production of video scripts, social media captions, and overall project management. By leveraging a structured AI agent, VidPlan AI helps creators brainstorm ideas and seamlessly execute them into organized, structured formats.
+**VidPlan AI** (formerly Talent Stream AI) is an AI-powered content creation platform that streamlines video production workflows. It combines conversational AI with structured content generation to help creators transform ideas into polished scripts, social media captions, and organized project plans.
 
-## 🚀 Project Overview
+## 🎯 The Problem
 
-VidPlan AI assists content creators in generating video-related content using a sophisticated AI agent. The AI is designed with two distinct modes:
-- **Brainstorming Mode (Chat-only):** Discuss ideas, explore concepts, and refine strategies without altering project files.
-- **Execution Mode:** The AI autonomously writes and updates scripts, captions, and reference notes directly into the database.
+Content creators face significant challenges in video production:
+- **Ideation to execution gaps** - Great ideas often get lost in translation between brainstorming and final content
+- **Workflow fragmentation** - Switching between chat interfaces, script editors, and social media tools
+- **Context loss** - Previous discussions and decisions aren't preserved for future reference
+- **Manual repetition** - Recreating similar content across different platforms
 
-## 🖥️ User Interface
+## 💡 The Solution
 
-The application features a highly productive, multi-tab layout:
+VidPlan AI provides a unified workspace where creators can:
+1. **Brainstorm naturally** with an AI assistant in conversational mode
+2. **Execute seamlessly** as the AI transforms discussions into structured content
+3. **Organize efficiently** with a tab-based interface that maps directly to production workflows
 
-- **Left Sidebar:** Displays a list of all your projects with a convenient "Create New Project" button.
-- **Right Main Panel:** A workspace dedicated to the selected project, divided into multiple functional tabs:
-  - **Chat Tab:** Your primary interface for interacting with the AI agent.
-  - **Script Tab:** Holds generated and refined video scripts.
-  - **References Tab:** Stores research notes, links, and background context.
-  - **Social Media Tab:** Contains auto-generated captions, descriptions, and hashtags.
+The system intelligently separates **idea generation** from **content creation**, ensuring that creative exploration doesn't interfere with final output quality.
 
-**Workflow:** When you create a new project, the backend instantly provisions a project ID and initializes a corresponding entry in the vector database for semantic search. As you interact with the agent in the Chat tab, it intelligently populates the other tabs with relevant content.
+## 🚀 Core Features
 
-## 🏗️ Backend Architecture
+### 🤖 Dual-Mode AI Agent
+- **Brainstorming Mode**: Free-form conversation for exploring ideas, refining concepts, and strategic planning
+- **Execution Mode**: Structured content generation that directly updates scripts, captions, and project documentation
 
-The backend is built for performance and modularity using **FastAPI**. It implements a strict RESTful architecture with domain-specific routers (`projects`, `messages`, `scripts`, `social_media`) that map 1:1 to the frontend tabs, while the AI orchestrator runs invisibly as a side-effect of message creation.
+### 🗂️ Unified Workspace
+- **Project-centric organization**: All content related to a video project in one place
+- **Tab-based interface**: 
+  - **Project Tab**: Metadata, objectives, and production notes
+  - **Chat Tab**: Conversational interface with the AI assistant
+  - **Script Tab**: Generated video scripts with scene-by-scene breakdowns
+  - **Social Network Tab**: Platform-optimized captions and descriptions
 
-### Hybrid Storage System
-- **PostgreSQL:** Provides structured storage for projects, documents (scripts, captions), and chat messages.
-- **Vector Database (PGVector):** Stores project embeddings to enable semantic search and Retrieval-Augmented Generation (RAG) workflows.
+### 🔄 Intelligent Workflow
+1. **Create Project**: Start with a title and basic concept
+2. **Brainstorm**: Discuss ideas with the AI in natural language
+3. **Execute**: Command the AI to generate specific content types
+4. **Refine**: Manually edit AI-generated content as needed
+5. **Export**: Use generated content across platforms
 
-### AI Agent (Pydantic AI)
-The core intelligence is powered by **Pydantic AI**, which enforces structured intent outputs. It utilizes function calling to safely save documents, update project statuses, and generate content without direct database access. The agent is organized into modular components:
-- **Agent Core** (`backend/services/agent/`): Main agent logic with system prompts and tools
-- **Conversation Service** (`backend/services/conversation/`): Orchestrates message flow and AI responses
-- **CRUD Operations** (`backend/services/crud/`): Database operations following repository pattern
+## 🐳 Quick Start (Docker)
 
-## 🐳 Docker Deployment
-
-VidPlan AI is fully containerized with Docker Compose for easy deployment:
+Get VidPlan AI running in minutes with Docker Compose:
 
 ```bash
-# Build and start all services
+# Clone the repository
+git clone <repository-url>
+cd vidplan_ai
+
+# Set up environment (copy example and add your API key)
+cp .env.example .env
+# Edit .env file and add your OpenAI API key:
+# OPENAI_API_KEY=sk-your-key-here
+
+# Start all services
 docker compose up --build
 
-# Start in detached mode
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
+# Access the application:
+# - Frontend: http://localhost:8501
+# - Backend API: http://localhost:8000
+# - API Documentation: http://localhost:8000/docs
+# - Database: localhost:5432 (user: admin, password: password)
 ```
 
-**Services:**
-- **PostgreSQL + PGVector** (`db:5432`): Database with vector extension
-- **FastAPI Backend** (`backend:8000`): REST API and AI agent
-- **Streamlit Frontend** (`frontend:8501`): Web interface
+**Services Started:**
+- ✅ **PostgreSQL with PGVector** - Vector-enabled database for semantic search
+- ✅ **FastAPI Backend** - REST API with AI agent orchestration
+- ✅ **Streamlit Frontend** - Interactive web interface
 
-**Multi-Provider AI Support:** Configure your preferred LLM provider via environment variables (OpenAI, DeepSeek, Anthropic, Google, Mistral, Groq, Cohere, etc.)
-
-## ✨ Key Features
-
-- **Structured AI Agent:** Clear separation between idea generation (brainstorming) and content generation (execution).
-- **Hybrid Data Storage:** Combines the reliability of Postgres for structured data with the intelligence of a Vector DB for semantic retrieval.
-- **Multi-Tab GUI:** An organized, intuitive interface for seamless project management and content creation.
-- **Full Traceability:** Complete history of chat interactions and generated content versions.
-- **Containerized Deployment:** Easy setup with Docker Compose.
+**Environment Variables:**
+The application uses the following key environment variables (configured in `.env`):
+- `OPENAI_API_KEY`: Your OpenAI API key (required)
+- `AI_MODEL`: LLM provider and model (default: `openai:gpt-4o-mini`)
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Database credentials
+- `API_URL`: Backend API URL for frontend (default: `http://backend:8000`)
 
 ## 🛠️ Tech Stack
 
-- **Backend:** FastAPI, SQLAlchemy (Postgres), PGVector (or external Vector DB like Qdrant)
-- **Frontend:** Streamlit
-- **AI/LLM:** Pydantic AI with multi-provider support (OpenAI, DeepSeek, Anthropic, Google Gemini, Mistral, Groq, Cohere, and more)
-- **Containerization:** Docker, Docker Compose
+### Backend & AI
+- **Framework**: FastAPI (async Python)
+- **AI Orchestration**: Pydantic AI with structured outputs
+- **Database**: PostgreSQL + PGVector for hybrid structured/vector storage
+- **ORM**: SQLAlchemy with async support
+- **Validation**: Pydantic v2
 
-## 📚 Documentation
+### Frontend
+- **Framework**: Streamlit for rapid UI development
+- **Layout**: Custom multi-tab workspace with project sidebar
 
-For a deeper dive into the technical design, database schemas, and folder structures, please refer to the detailed documentation located in the `/docs` directory:
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Multi-LLM Support**: OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, Groq, Cohere
 
-- [Backend Architecture](docs/backend_architecture.md)
-- [Frontend Architecture](docs/frontend_architecture.md)
+### Development
+- **Testing**: pytest with async fixtures
+- **Code Quality**: ruff, black, mypy
+- **Environment Management**: python-dotenv, pydantic-settings
+
+## 📚 Technical Documentation
+
+Detailed architecture and implementation documentation is available in the `/docs` directory:
+
+- **[Backend Architecture](docs/backend_architecture.md)** - Detailed breakdown of services, database schema, and AI agent implementation
+- **[Frontend Architecture](docs/frontend_architecture.md)** - UI structure, component organization, and workflow patterns
+
+## 🎯 Use Cases
+
+### For Content Creators
+- YouTube video script generation
+- Social media content planning
+- Video project organization
+- Cross-platform content adaptation
+
+### For AI Engineers
+- Example of production-ready AI agent architecture
+- Pydantic AI implementation with structured outputs
+- Hybrid database (SQL + vector) integration
+- Containerized deployment with Docker
+
+## 📄 License
+
+[Specify license - e.g., MIT, Apache 2.0]
+
+## 🤝 Contributing
+
+[Contribution guidelines would go here]
